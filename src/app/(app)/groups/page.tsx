@@ -1,4 +1,3 @@
-
 'use client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,10 +6,15 @@ import { Facebook, Users } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@/firebase';
+
 
 export default function GroupsPage() {
   // Use a map to store the checked state for each switch
   const [checkedStates, setCheckedStates] = useState<Record<string, boolean>>({});
+  const router = useRouter();
+  const { user } = useUser();
 
   useEffect(() => {
     // Initialize checked states, you could also fetch this from a DB
@@ -25,6 +29,15 @@ export default function GroupsPage() {
 
   const handleCheckedChange = (groupId: string, isChecked: boolean) => {
     setCheckedStates(prev => ({ ...prev, [groupId]: isChecked }));
+  };
+  
+  const handleConnect = () => {
+    if (user) {
+      // Optional: Handle logic for already logged-in user, e.g., link another account
+      console.log('User is already connected.');
+    } else {
+      router.push('/login');
+    }
   };
 
   return (
@@ -43,7 +56,7 @@ export default function GroupsPage() {
                     </CardTitle>
                     <CardDescription>Connect and manage your Facebook groups.</CardDescription>
                 </div>
-                <Button>Connect New Account</Button>
+                <Button onClick={handleConnect}>Connect New Account</Button>
             </div>
         </CardHeader>
         <CardContent>
