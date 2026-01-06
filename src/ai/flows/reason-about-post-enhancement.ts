@@ -51,7 +51,7 @@ const prompt = ai.definePrompt({
   Consider the tone of the post.
   Make sure to mention what could be changed and why.
   Be specific and give advice for the user to consider when posting.
-  ',
+  `,
 });
 
 const reasonAboutPostEnhancementFlow = ai.defineFlow(
