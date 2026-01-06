@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useActionState, useRef, ChangeEvent } from 'react';
+import { useFormStatus } from 'react-dom';
 import { handleGeneratePost } from '@/app/actions';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -110,7 +111,7 @@ export default function PostCreator() {
 
                 {imagePreview && (
                     <div className="relative w-full aspect-video rounded-md overflow-hidden border">
-                         <Image src={imagePreview} alt="Image preview" layout="fill" objectFit="cover" />
+                         <Image src={imagePreview} alt="Image preview" fill objectFit="cover" />
                         <Button
                             type="button"
                             variant="destructive"
