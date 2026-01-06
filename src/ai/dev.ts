@@ -1,1 +1,6 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/enhance-generated-post.ts';
+import '@/ai/flows/generate-facebook-post.ts';
+import '@/ai/flows/reason-about-post-enhancement.ts';
