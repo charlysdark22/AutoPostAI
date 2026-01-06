@@ -1,11 +1,32 @@
+
+'use client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MOCK_GROUPS } from '@/lib/mock-data';
 import { Facebook, Users } from 'lucide-react';
-import Image from 'next/image';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useEffect, useState } from 'react';
 
 export default function GroupsPage() {
+  // Use a map to store the checked state for each switch
+  const [checkedStates, setCheckedStates] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    // Initialize checked states, you could also fetch this from a DB
+    const initialStates: Record<string, boolean> = {};
+    MOCK_GROUPS.forEach(group => {
+      // For demonstration, using a pseudo-random initial state
+      // In a real app, this would be based on user settings
+      initialStates[group.id] = Math.random() > 0.5;
+    });
+    setCheckedStates(initialStates);
+  }, []);
+
+  const handleCheckedChange = (groupId: string, isChecked: boolean) => {
+    setCheckedStates(prev => ({ ...prev, [groupId]: isChecked }));
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -38,7 +59,11 @@ export default function GroupsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                     <Label htmlFor={`switch-${group.id}`} className="text-sm text-muted-foreground">Enable Posting</Label>
-                    <Switch id={`switch-${group.id}`} defaultChecked={Math.random() > 0.5} />
+                    <Switch 
+                      id={`switch-${group.id}`} 
+                      checked={checkedStates[group.id] || false}
+                      onCheckedChange={(isChecked) => handleCheckedChange(group.id, isChecked)}
+                    />
                 </div>
               </Card>
             ))}
