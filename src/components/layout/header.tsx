@@ -30,6 +30,15 @@ export default function Header() {
     router.push('/login');
   };
 
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return '?';
+    const names = name.split(' ');
+    if (names.length > 1) {
+      return names[0].charAt(0) + names[names.length - 1].charAt(0);
+    }
+    return name.charAt(0);
+  }
+
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
       <div className="md:hidden">
@@ -42,8 +51,8 @@ export default function Header() {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-9 w-9 rounded-full">
             <Avatar className="h-9 w-9">
-              {user && <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''} data-ai-hint="person portrait" />}
-              <AvatarFallback>{user ? user.displayName?.charAt(0) : '?'}</AvatarFallback>
+              {user?.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || ''} data-ai-hint="person portrait" />}
+              <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
