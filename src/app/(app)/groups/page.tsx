@@ -11,13 +11,14 @@ import { useUser } from '@/firebase';
 
 
 export default function GroupsPage() {
-  // Use a map to store the checked state for each switch
   const [checkedStates, setCheckedStates] = useState<Record<string, boolean>>({});
+  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
   const { user } = useUser();
 
   useEffect(() => {
-    // Initialize checked states from local storage or a default
+    setIsClient(true);
+    // Initialize checked states from local storage
     const initialStates: Record<string, boolean> = {};
     MOCK_GROUPS.forEach(group => {
       const storedState = localStorage.getItem(`switch-${group.id}`);
@@ -27,11 +28,9 @@ export default function GroupsPage() {
   }, []);
 
   const handleCheckedChange = (groupId: string, isChecked: boolean) => {
-    setCheckedStates(prev => {
-      const newStates = { ...prev, [groupId]: isChecked };
-      localStorage.setItem(`switch-${groupId}`, JSON.stringify(isChecked));
-      return newStates;
-    });
+    const newStates = { ...checkedStates, [groupId]: isChecked };
+    setCheckedStates(newStates);
+    localStorage.setItem(`switch-${groupId}`, JSON.stringify(isChecked));
   };
   
   const handleConnect = () => {
@@ -75,11 +74,13 @@ export default function GroupsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                     <Label htmlFor={`switch-${group.id}`} className="text-sm text-muted-foreground">Enable Posting</Label>
-                    <Switch 
-                      id={`switch-${group.id}`} 
-                      checked={checkedStates[group.id] || false}
-                      onCheckedChange={(isChecked) => handleCheckedChange(group.id, isChecked)}
-                    />
+                    {isClient && (
+                      <Switch 
+                        id={`switch-${group.id}`} 
+                        checked={checkedStates[group.id] || false}
+                        onCheckedChange={(isChecked) => handleCheckedChange(group.id, isChecked)}
+                      />
+                    )}
                 </div>
               </Card>
             ))}
