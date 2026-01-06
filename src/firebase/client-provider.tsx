@@ -6,12 +6,22 @@ import type { FirebaseApp } from 'firebase/app';
 import type { Auth } from 'firebase/auth';
 import type { Firestore } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
 type FirebaseServices = {
   app: FirebaseApp;
   auth: Auth;
   firestore: Firestore;
 };
+
+function LoadingSpinner() {
+    return (
+        <div className="flex min-h-screen w-full items-center justify-center bg-background">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
+}
+
 
 export function FirebaseClientProvider({
   children,
@@ -26,8 +36,7 @@ export function FirebaseClientProvider({
   }, []);
 
   if (!firebase) {
-    // You can show a loading spinner here
-    return null;
+    return <LoadingSpinner />;
   }
 
   return (
