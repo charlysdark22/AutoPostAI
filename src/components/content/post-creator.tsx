@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useState, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { handleGeneratePost, handleReasonAboutEnhancement, handleEnhancePost } from '@/app/actions';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 
 function GenerationForm({ setGeneratedContent }: { setGeneratedContent: (content: string) => void }) {
   const initialState = { message: '', errors: {}, post: '' };
-  const [state, dispatch] = useFormState(handleGeneratePost, initialState);
+  const [state, dispatch] = useActionState(handleGeneratePost, initialState);
 
   if (state.message === 'success' && state.post) {
     setGeneratedContent(state.post);
@@ -53,8 +53,8 @@ function GenerationForm({ setGeneratedContent }: { setGeneratedContent: (content
 function EnhancementForm({ generatedContent, setEnhancedContent }: { generatedContent: string; setEnhancedContent: (content: string) => void }) {
   const [reasoning, setReasoning] = useState<{ shouldEnhance: boolean; reasoning: string } | null>(null);
 
-  const [reasonState, reasonDispatch] = useFormState(handleReasonAboutEnhancement, null);
-  const [enhanceState, enhanceDispatch] = useFormState(handleEnhancePost, null);
+  const [reasonState, reasonDispatch] = useActionState(handleReasonAboutEnhancement, null);
+  const [enhanceState, enhanceDispatch] = useActionState(handleEnhancePost, null);
 
   if (reasonState?.message === 'success' && !reasoning) {
     setReasoning({ shouldEnhance: reasonState.shouldEnhance, reasoning: reasonState.reasoning });
