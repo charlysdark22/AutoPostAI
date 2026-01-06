@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MOCK_GROUPS } from '@/lib/mock-data';
-import { Facebook, Users } from 'lucide-react';
+import { Users, Link as LinkIcon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useEffect, useState } from 'react';
@@ -17,18 +17,21 @@ export default function GroupsPage() {
   const { user } = useUser();
 
   useEffect(() => {
-    // Initialize checked states, you could also fetch this from a DB
+    // Initialize checked states from local storage or a default
     const initialStates: Record<string, boolean> = {};
     MOCK_GROUPS.forEach(group => {
-      // For demonstration, using a pseudo-random initial state
-      // In a real app, this would be based on user settings
-      initialStates[group.id] = Math.random() > 0.5;
+      const storedState = localStorage.getItem(`switch-${group.id}`);
+      initialStates[group.id] = storedState ? JSON.parse(storedState) : false;
     });
     setCheckedStates(initialStates);
   }, []);
 
   const handleCheckedChange = (groupId: string, isChecked: boolean) => {
-    setCheckedStates(prev => ({ ...prev, [groupId]: isChecked }));
+    setCheckedStates(prev => {
+      const newStates = { ...prev, [groupId]: isChecked };
+      localStorage.setItem(`switch-${groupId}`, JSON.stringify(isChecked));
+      return newStates;
+    });
   };
   
   const handleConnect = () => {
@@ -52,9 +55,9 @@ export default function GroupsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <CardTitle className="font-headline flex items-center gap-2">
-                        <Facebook className="text-blue-600" /> Facebook Account
+                        <LinkIcon className="text-primary" /> Connect Account
                     </CardTitle>
-                    <CardDescription>Connect and manage your Facebook groups.</CardDescription>
+                    <CardDescription>Connect and manage your social media groups.</CardDescription>
                 </div>
                 <Button onClick={handleConnect}>Connect New Account</Button>
             </div>
@@ -75,7 +78,7 @@ export default function GroupsPage() {
                     <Switch 
                       id={`switch-${group.id}`} 
                       checked={checkedStates[group.id] || false}
-                      onCheckedChange={(isChecked) => handleCheckedChange(group.id, isChecked)}
+                      onCheckedChanged={(isChecked) => handleCheckedChange(group.id, isChecked)}
                     />
                 </div>
               </Card>
