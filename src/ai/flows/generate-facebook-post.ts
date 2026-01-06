@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview Flow for generating Facebook posts from a topic.
+ * @fileOverview Flow for generating Facebook posts from a topic and an optional image.
  *
  * - generateFacebookPost - A function that generates a Facebook post.
  * - GenerateFacebookPostInput - The input type for the generateFacebookPost function.
@@ -13,6 +13,9 @@ import {z} from 'genkit';
 
 const GenerateFacebookPostInputSchema = z.object({
   topic: z.string().describe('The topic to generate a Facebook post about.'),
+  photoDataUri: z.string().optional().describe(
+    "An optional photo for the post, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+  ),
 });
 export type GenerateFacebookPostInput = z.infer<typeof GenerateFacebookPostInputSchema>;
 
@@ -29,7 +32,17 @@ const generateFacebookPostPrompt = ai.definePrompt({
   name: 'generateFacebookPostPrompt',
   input: {schema: GenerateFacebookPostInputSchema},
   output: {schema: GenerateFacebookPostOutputSchema},
-  prompt: `You are an expert social media content creator. Generate a engaging Facebook post about the following topic: {{{topic}}}`,
+  prompt: `You are an expert social media content creator. 
+  
+  Generate an engaging Facebook post about the following topic: {{{topic}}}
+  
+  {{#if photoDataUri}}
+  The user has provided an image. Use the content of the image as additional context to make the post more relevant and engaging.
+  Image: {{media url=photoDataUri}}
+  {{/if}}
+
+  The post should be engaging, include relevant hashtags, and encourage interaction.
+  `,
 });
 
 const generateFacebookPostFlow = ai.defineFlow(

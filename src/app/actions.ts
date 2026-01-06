@@ -7,6 +7,7 @@ import { enhanceGeneratedPost } from '@/ai/flows/enhance-generated-post';
 
 const generatePostSchema = z.object({
   topic: z.string().min(3, 'Topic must be at least 3 characters long.'),
+  image: z.string().optional(),
 });
 
 const enhancePostSchema = z.object({
@@ -15,8 +16,18 @@ const enhancePostSchema = z.object({
 
 export async function handleGeneratePost(prevState: any, formData: FormData) {
   try {
+    const imageFile = formData.get('image') as File;
+    let imageAsDataUri: string | undefined = undefined;
+
+    if (imageFile && imageFile.size > 0) {
+      const buffer = await imageFile.arrayBuffer();
+      const base64 = Buffer.from(buffer).toString('base64');
+      imageAsDataUri = `data:${imageFile.type};base64,${base64}`;
+    }
+     
     const validatedFields = generatePostSchema.safeParse({
       topic: formData.get('topic'),
+      image: imageAsDataUri,
     });
 
     if (!validatedFields.success) {
@@ -26,12 +37,16 @@ export async function handleGeneratePost(prevState: any, formData: FormData) {
       };
     }
 
-    const result = await generateFacebookPost({ topic: validatedFields.data.topic });
+    const result = await generateFacebookPost({ 
+        topic: validatedFields.data.topic,
+        photoDataUri: validatedFields.data.image,
+    });
     return {
       message: 'success',
       post: result.post,
     };
   } catch (error) {
+    console.error(error);
     return {
       message: 'An error occurred while generating the post. Please try again.',
       post: '',
