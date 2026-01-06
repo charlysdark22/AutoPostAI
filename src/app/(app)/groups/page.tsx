@@ -78,7 +78,7 @@ export default function GroupsPage() {
                     <Switch 
                       id={`switch-${group.id}`} 
                       checked={checkedStates[group.id] || false}
-                      onCheckedChanged={(isChecked) => handleCheckedChange(group.id, isChecked)}
+                      onCheckedChange={(isChecked) => handleCheckedChange(group.id, isChecked)}
                     />
                 </div>
               </Card>
