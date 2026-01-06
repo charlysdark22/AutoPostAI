@@ -32,7 +32,7 @@ export default function Header() {
 
   const getInitials = (name: string | null | undefined) => {
     if (!name) return '?';
-    const names = name.split(' ');
+    const names = name.trim().split(' ');
     if (names.length > 1) {
       return names[0].charAt(0) + names[names.length - 1].charAt(0);
     }
@@ -52,7 +52,7 @@ export default function Header() {
           <Button variant="ghost" className="relative h-9 w-9 rounded-full">
             <Avatar className="h-9 w-9">
               {user?.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || ''} data-ai-hint="person portrait" />}
-              <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+              <AvatarFallback>{user ? getInitials(user.displayName) : '?'}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>

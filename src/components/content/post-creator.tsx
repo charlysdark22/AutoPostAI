@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useActionState, useRef, ChangeEvent } from 'react';
+import { useState, useActionState, useRef, ChangeEvent, useMemo } from 'react';
 import { useFormStatus } from 'react-dom';
 import { handleGeneratePost } from '@/app/actions';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Bot, Calendar as CalendarIcon, Loader2, Sparkles, Wand2, Image as ImageIcon, X } from 'lucide-react';
-import { MOCK_GROUPS } from '@/lib/mock-data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
@@ -16,6 +15,11 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import { useUser, useFirestore } from '@/firebase';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import type { Group } from '@/lib/types';
+
 
 function SubmitButton({ children, ...props }: React.ComponentProps<typeof Button>) {
   const { pending } = useFormStatus();
@@ -28,11 +32,22 @@ function SubmitButton({ children, ...props }: React.ComponentProps<typeof Button
 
 export default function PostCreator() {
   const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
   const [date, setDate] = useState<Date>();
+  const [selectedGroup, setSelectedGroup] = useState<string>();
   const [generatedContent, setGeneratedContent] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [topic, setTopic] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const userGroupsQuery = useMemo(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, `users/${user.uid}/groups`);
+  }, [user, firestore]);
+
+  const { data: userGroups, loading: groupsLoading } = useCollection(userGroupsQuery);
 
   const initialState = { message: '', errors: {}, post: '' };
   const [state, formAction] = useActionState(handleGeneratePost, initialState);
@@ -48,27 +63,67 @@ export default function PostCreator() {
     }
   };
 
-  const handleSchedule = () => {
+  const handleSchedule = async () => {
+    if (!user || !firestore) {
+        toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to schedule a post.' });
+        return;
+    }
     if (!generatedContent) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Please generate content before scheduling.',
-      });
-      return;
+        toast({ variant: 'destructive', title: 'Error', description: 'Please generate content before scheduling.' });
+        return;
     }
-     if (!date) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Please select a publication date.',
-      });
-      return;
+    if (!date) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Please select a publication date.' });
+        return;
     }
-    toast({
-      title: 'Post Scheduled! ✨',
-      description: 'Your post has been successfully scheduled for publication.',
-    });
+    if (!selectedGroup) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Please select a group.' });
+        return;
+    }
+
+    try {
+        const postsCollection = collection(firestore, 'posts');
+        const selectedGroupData = userGroups?.find(g => g.id === selectedGroup);
+        
+        await addDoc(postsCollection, {
+            userId: user.uid,
+            content: generatedContent,
+            topic: topic,
+            platform: 'facebook',
+            status: 'Scheduled',
+            publishDate: date.toISOString(),
+            group: {
+                id: selectedGroup,
+                name: selectedGroupData?.name || 'Unknown Group',
+            },
+            engagement: { likes: 0, comments: 0, shares: 0 },
+            createdAt: serverTimestamp(),
+            image: imagePreview ? { src: imagePreview, alt: topic, hint: '' } : null,
+        });
+
+        toast({
+            title: 'Post Scheduled! ✨',
+            description: 'Your post has been successfully scheduled for publication.',
+        });
+        
+        // Reset form
+        setGeneratedContent('');
+        setTopic('');
+        setImagePreview(null);
+        setDate(undefined);
+        setSelectedGroup(undefined);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+
+    } catch (error) {
+        console.error("Error scheduling post:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Could not schedule the post. Please try again.',
+        });
+    }
   };
   
   if (state.message === 'success' && state.post && state.post !== generatedContent) {
@@ -160,14 +215,15 @@ export default function PostCreator() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
                     <div>
                         <Label>Group</Label>
-                        <Select>
+                        <Select onValueChange={setSelectedGroup} value={selectedGroup} disabled={groupsLoading || !userGroups?.length}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Select a group" />
+                                <SelectValue placeholder={groupsLoading ? "Loading groups..." : "Select a group"} />
                             </SelectTrigger>
                             <SelectContent>
-                                {MOCK_GROUPS.map((group) => (
+                                {userGroups && userGroups.map((group: Group) => (
                                     <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
                                 ))}
+                                {!userGroups?.length && !groupsLoading && <SelectItem value="no-groups" disabled>No enabled groups found.</SelectItem>}
                             </SelectContent>
                         </Select>
                     </div>
@@ -192,6 +248,7 @@ export default function PostCreator() {
                                     selected={date}
                                     onSelect={setDate}
                                     initialFocus
+                                    disabled={(date) => date < new Date()}
                                 />
                             </PopoverContent>
                         </Popover>

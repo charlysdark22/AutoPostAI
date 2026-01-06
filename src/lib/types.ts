@@ -1,10 +1,12 @@
 export type Post = {
   id: string;
+  userId: string;
+  topic: string;
   content: string;
   platform: 'facebook';
   status: 'Published' | 'Scheduled' | 'Draft';
   publishDate: string;
-  engagement: {
+  engagement?: {
     likes: number;
     comments: number;
     shares: number;
@@ -17,11 +19,13 @@ export type Post = {
     src: string;
     alt: string;
     hint: string;
-  };
+  } | null;
+  createdAt: any; // serverTimestamp
 };
 
 export type Group = {
   id: string;
+  userId?: string;
   name: string;
   memberCount: number;
   platform: 'facebook';

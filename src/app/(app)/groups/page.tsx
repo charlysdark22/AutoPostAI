@@ -1,44 +1,65 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MOCK_GROUPS } from '@/lib/mock-data';
 import { Users, Link as LinkIcon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
+import type { Group } from '@/lib/types';
+import { MOCK_GROUPS } from '@/lib/mock-data'; // Using mock for display until we have real group fetching logic
 
 
 export default function GroupsPage() {
-  const [checkedStates, setCheckedStates] = useState<Record<string, boolean>>({});
+  const [enabledGroups, setEnabledGroups] = useState<Set<string>>(new Set());
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
   const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userGroupsQuery = useMemo(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, `users/${user.uid}/groups`);
+  }, [user, firestore]);
+
+  const { data: userGroups, loading } = useCollection(userGroupsQuery);
 
   useEffect(() => {
     setIsClient(true);
-    // Initialize checked states from local storage
-    const initialStates: Record<string, boolean> = {};
-    MOCK_GROUPS.forEach(group => {
-      const storedState = localStorage.getItem(`switch-${group.id}`);
-      initialStates[group.id] = storedState ? JSON.parse(storedState) : false;
-    });
-    setCheckedStates(initialStates);
   }, []);
 
-  const handleCheckedChange = (groupId: string, isChecked: boolean) => {
-    const newStates = { ...checkedStates, [groupId]: isChecked };
-    setCheckedStates(newStates);
-    localStorage.setItem(`switch-${groupId}`, JSON.stringify(isChecked));
+  useEffect(() => {
+    if (userGroups) {
+      setEnabledGroups(new Set(userGroups.map(g => g.id)));
+    }
+  }, [userGroups]);
+  
+  const handleCheckedChange = async (group: Group, isChecked: boolean) => {
+    if (!user || !firestore) return;
+    
+    const groupRef = doc(firestore, `users/${user.uid}/groups`, group.id);
+    const newEnabledGroups = new Set(enabledGroups);
+
+    if (isChecked) {
+      newEnabledGroups.add(group.id);
+      await setDoc(groupRef, { ...group, userId: user.uid });
+    } else {
+      newEnabledGroups.delete(group.id);
+      await deleteDoc(groupRef);
+    }
+
+    setEnabledGroups(newEnabledGroups);
   };
   
   const handleConnect = () => {
-    if (user) {
-      // Optional: Handle logic for already logged-in user, e.g., link another account
-      console.log('User is already connected.');
-    } else {
+    if (!user) {
       router.push('/login');
+    } else {
+      // Logic to connect to facebook and fetch groups
+      console.log('Already logged in, implement group fetching from Facebook API');
     }
   };
 
@@ -56,9 +77,11 @@ export default function GroupsPage() {
                     <CardTitle className="font-headline flex items-center gap-2">
                         <LinkIcon className="text-primary" /> Connect Account
                     </CardTitle>
-                    <CardDescription>Connect and manage your social media groups.</CardDescription>
+                    <CardDescription>Connect your social media accounts to fetch your groups.</CardDescription>
                 </div>
-                <Button onClick={handleConnect}>Connect New Account</Button>
+                <Button onClick={handleConnect}>
+                  {user ? 'Connect New Account' : 'Connect Account'}
+                </Button>
             </div>
         </CardHeader>
         <CardContent>
@@ -72,16 +95,16 @@ export default function GroupsPage() {
                     {group.memberCount.toLocaleString()} members
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Label htmlFor={`switch-${group.id}`} className="text-sm text-muted-foreground">Enable Posting</Label>
-                    {isClient && (
+                {isClient && user && (
+                  <div className="flex items-center gap-2">
+                      <Label htmlFor={`switch-${group.id}`} className="text-sm text-muted-foreground">Enable Posting</Label>
                       <Switch 
                         id={`switch-${group.id}`} 
-                        checked={checkedStates[group.id] || false}
-                        onCheckedChange={(isChecked) => handleCheckedChange(group.id, isChecked)}
+                        checked={enabledGroups.has(group.id)}
+                        onCheckedChange={(isChecked) => handleCheckedChange(group, isChecked)}
                       />
-                    )}
-                </div>
+                  </div>
+                )}
               </Card>
             ))}
           </div>

@@ -1,14 +1,16 @@
+'use client';
 import type { Post } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { format, parseISO } from 'date-fns';
+import { BotMessageSquare } from 'lucide-react';
 
 function PostItem({ post }: { post: Post }) {
   return (
     <div className="flex items-center gap-4">
       <Avatar className="hidden h-9 w-9 sm:flex">
-        {post.image ? <AvatarImage src={post.image.src} alt={post.image.alt} data-ai-hint={post.image.hint} /> : <AvatarFallback>{post.group.name.charAt(0)}</AvatarFallback>}
+        {post.image?.src ? <AvatarImage src={post.image.src} alt={post.image.alt} data-ai-hint={post.image.hint} /> : <AvatarFallback><BotMessageSquare className="w-5 h-5"/></AvatarFallback>}
       </Avatar>
       <div className="grid gap-1">
         <p className="text-sm font-medium leading-none truncate">{post.content}</p>
