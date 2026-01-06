@@ -26,7 +26,14 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   const handleFacebookLogin = async () => {
-    if (!auth) return;
+    if (!auth) {
+        toast({
+            variant: 'destructive',
+            title: 'Error de Inicialización',
+            description: 'El servicio de autenticación no está listo. Por favor, espera un momento y vuelve a intentarlo.',
+        });
+        return;
+    }
     const provider = new FacebookAuthProvider();
     try {
       await signInWithPopup(auth, provider);
